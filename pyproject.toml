@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "ontology-loader"
+version = "0.1.0"
+description = "Import an ontology file into a Neo4j database"
+authors = ["fcriscuo <genomicdatasci@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
