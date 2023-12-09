@@ -2,11 +2,15 @@
 name = "ontology-loader"
 version = "0.1.0"
 description = "Import an ontology file into a Neo4j database"
-authors = ["fcriscuo <genomicdatasci@gmail.com>"]
+authors = ["fcriscuo <fcriscuo@genomicsai.dev>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+rdflib = "^7.0.0"
+regex = "^2023.10.3"
+pyparsing = "^3.1.1"
+pronto = "^2.5.5"
 
 
 [build-system]
