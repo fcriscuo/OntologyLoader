@@ -19,7 +19,8 @@ class OboTerm:
     def __init__(self, id: str, name: str, namespace: str, comment: str, definition: str,
                  synonyms: List[str],
                  relationships: List[OboRelationship],
-                 xrefs: List[str]):
+                 xrefs: List[str],
+                 pmids: List[int] = [] ):
         self.id = id
         self.name = name
         self.namespace = namespace
@@ -28,6 +29,7 @@ class OboTerm:
         self.synonyms = synonyms
         self.relationships = relationships
         self.xrefs = xrefs
+        self.pmids = pmids
 
 def parse_obo_file(url: str) -> List[OboTerm]:
     with urllib.request.urlopen(url) as response:
@@ -49,6 +51,8 @@ def parse_obo_file(url: str) -> List[OboTerm]:
                 term.comment = line[9:]
             elif line.startswith('def:'):
                 term.definition = line[5:].split('"')[1]
+                if 'PMID:' in line:
+                    term.pmids = extract_pmids(line[5:].split('"')[2].replace(']',''))
             elif line.startswith('synonym:'):
                 term.synonyms.append(line[9:].split('"')[1])
             elif line.startswith('is_a:'):
@@ -63,6 +67,8 @@ def parse_obo_file(url: str) -> List[OboTerm]:
         terms.append(term)
     return terms
 
+def extract_pmids(string):
+     return [int(item.strip()[5:]) for item in string.split(',') if item.strip().startswith('PMID:')]
 
 if __name__ == "__main__":
     url = "http://purl.obolibrary.org/obo/go.obo"
@@ -71,5 +77,8 @@ if __name__ == "__main__":
     for i in range(1000,1500):
         print(terms[i].__dict__)
         if len(terms[i].relationships):
-            for j in range(0,len(terms[i].relationships)):
-                print(terms[i].relationships[j].__dict__)
+            [print(terms[i].relationships[j].__dict__ ) for j in range(len(terms[i].relationships))]
+        if len(terms[i].pmids):
+            print(terms[i].pmids)
+
+
