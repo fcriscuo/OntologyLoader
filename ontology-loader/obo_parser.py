@@ -1,5 +1,21 @@
 import urllib.request
 from typing import List
+import re
+
+class Xref:
+    def __init__(self, ontology, id,name):
+        self.ontology = ontology
+        self.term_id = id
+        self.name = name
+
+    def __init__(self, line):
+        match = re.match(r'xref: (\w+):(\w+) "(.*)"', line)
+        if match:
+            self.ontology = match.group(1)
+            self.term_id = match.group(2)
+            self.name = match.group(3)
+    def __str__(self):
+        return f"Ontology: {self.ontology}, ID: {self.term_id}, name: {self.name}"
 
 
 class OboRelationship:
@@ -19,7 +35,7 @@ class OboTerm:
     def __init__(self, id: str, name: str, namespace: str, comment: str, definition: str,
                  synonyms: List[str],
                  relationships: List[OboRelationship],
-                 xrefs: List[str],
+                 xrefs: List[Xref],
                  pmids: List[int] = [] ):
         self.id = id
         self.name = name
@@ -30,6 +46,10 @@ class OboTerm:
         self.relationships = relationships
         self.xrefs = xrefs
         self.pmids = pmids
+
+    def __str__(self):
+        return (f"ID: {self.id}, Name: {self.name}, Namespace: {self.namespace},"
+                f" Comment: {self.comment}, Definition: {self.definition}, Synonyms: {self.synonyms}")
 
 def parse_obo_file(url: str) -> List[OboTerm]:
     with urllib.request.urlopen(url) as response:
@@ -63,7 +83,7 @@ def parse_obo_file(url: str) -> List[OboTerm]:
                 rel = OboRelationship(line.replace('relationship:', ' ').lstrip())
                 term.relationships.append(rel)
             elif line.startswith('xref:'):
-                term.xrefs.append(line[6:].split('!')[0].strip())
+                term.xrefs.append(Xref(line))
         terms.append(term)
     return terms
 
@@ -74,11 +94,15 @@ if __name__ == "__main__":
     url = "http://purl.obolibrary.org/obo/go.obo"
     terms = parse_obo_file(url)
     print(f"Ontology has {len(terms)} terms.")
-    for i in range(1000,1500):
-        print(terms[i].__dict__)
+    for i in range(1500,3000):
+        print(terms[i])
         if len(terms[i].relationships):
             [print(terms[i].relationships[j].__dict__ ) for j in range(len(terms[i].relationships))]
         if len(terms[i].pmids):
             print(terms[i].pmids)
+        if len(terms[i].xrefs):
+            print("++++ Xrefs")
+            [print(terms[i].xrefs[j].__dict__) for j in range(len(terms[i].xrefs))]
+
 
 
