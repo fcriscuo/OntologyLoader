@@ -21,11 +21,16 @@ class Xref:
         self.name = name
 
     def generate_xref_from_string(line: str):
-        match = re.match(r'xref: (\w+):(\w+) "(.*)"', line)
-        if match:
-         return Xref(match.group(1), match.group(2), match.group(3))
+        if '"' in line:
+            match = re.match(r'(\w+): (\w+):(\S+) "(.*)"', line)
+            if match:
+             return Xref(match.group(2), match.group(3), match.group(4))
         else:
-            return None
+            match = re.match(r'(\w+): (\w+):(.*)', line)
+            if match:
+             return Xref(match.group(2), match.group(3), "")
+            else:
+                return Xref("", "", "")
 
 def __str__(self):
     return f"Ontology: {self.ontology}, ID: {self.term_id}, name: {self.name}"
@@ -70,7 +75,11 @@ class OboTerm:
                  pmids: List[int] = []):
         self.id = id
         # if the id contains a ':' then split it into prefix and id and resolve the ontology name from the registry
-
+        if ':' in id:
+            prefix, id = id.split(':', maxsplit=1)
+            self.ontology_name = ont_reg.get_ontology_name(prefix)
+        else:
+            self.ontology_name = ''
         self.term_name = term_name
         self.namespace = namespace
         self.comment = comment

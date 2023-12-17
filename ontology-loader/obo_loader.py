@@ -36,18 +36,18 @@ def create_or_update_OntologyTerm_node(obt: OboTerm):
         process_OntologyTerm_xrefs(obt)
     # Use the OntologyTerm's ontology_name property to add a label to the OntologyTerm node
     if obt.ontology_name:
-        query = f"MATCH (n:OntologyTerm {{id: '{obt.id}'}}) SET n:{obt.ontology_name}"
+        query = f"MATCH (n:OntologyTerm {{id: '{obt.id}'}}) SET n:{obt.ontology_name.replace(' ','_')}"
         with nju.driver.session() as session:
             session.run(query)
 
 
     # define a function that takes an PubMedArticle object and determines if a node labeled as PubMedArticle exists in the database based on the PubMedArticle's pub_id property
 
-def pubmed_article_node_exists(pma):
+def pubmed_article_node_exists(pub_id:int):
     """
     Return True if a node labeled as PubMedArticle exists in the database based on the PubMedArticle's pub_id property
     """
-    return nju.node_exists("PubMedArticle", "pub_id", pma.pub_id)
+    return nju.node_exists("PubMedArticle", "pub_id", str(pub_id))
 
 # define a function that processes a List of integers as PubMedArticle pub_ids, if a PubMedArticle node does not exist in the database for the pub_id, it creates a PubMedArticle node in the database
 # set the new PubMedArticle node's needs_properties property to True and tne needs_references property to True.
@@ -60,7 +60,7 @@ def create_or_update_pubmed_article_node(pubmed_ids):
     """
     for pubmed_id in pubmed_ids:
         if not pubmed_article_node_exists(pubmed_id):
-            query = f"CREATE (n:PubMedArticle {{pub_id: {pubmed_id}, needs_properties: TRUE, needs_references: TRUE}})"
+            query = f"CREATE (n:PubMedArticle {{pub_id: {str(pubmed_id)}, needs_properties: TRUE, needs_references: TRUE}})"
             with nju.driver.session() as session:
                 session.run(query)
         else:
@@ -68,11 +68,11 @@ def create_or_update_pubmed_article_node(pubmed_ids):
 
 # define a function that takes an OntologyTerm object and a PubMedArticle object as arguments and creates a relationship between the OntologyTerm and PubMedArticle nodes in the database
 
-def create_OntologyTerm_pubmed_article_relationship(obt, pma):
+def create_OntologyTerm_pubmed_article_relationship(obt, pub_id:int):
     """
     Create a relationship between the OntologyTerm and PubMedArticle nodes in the database
     """
-    query = f"MATCH (o:OntologyTerm {{id: '{obt.id}'}}), (p:PubMedArticle {{pub_id: {pma.pub_id}}}) CREATE (o)-[:CITES]->(p)"
+    query = f"MATCH (o:OntologyTerm {{id: '{obt.id}'}}), (p:PubMedArticle {{pub_id: {str(pub_id)}}}) CREATE (o)-[:CITES]->(p)"
     with nju.driver.session() as session:
         session.run(query)
 
@@ -124,7 +124,7 @@ def process_OntologyTerm_xrefs(obt):
     """
     for xref in obt.xrefs:
         # map the OboXref object to an OboTerm object
-        obo_term = OboTerm(xref.id, xref.name)
+        obo_term = OboTerm(xref.term_id, xref.name)
         # if the OboTerm object does not exist in the database as an OntologyTerm node, create an OntologyTerm node in the database using the new OboTerm object
         if not ontology_term_exists(obo_term):
             create_or_update_OntologyTerm_node(obo_term)
@@ -149,11 +149,11 @@ def process_OntologyTerm_synonyms(obt):
     Create OboSynonym nodes and relationships between the OntologyTerm and OboSynonym nodes in the database
     """
     for synonym in obt.synonyms:
-        if not nju.node_exists("OboSynonym", "name", synonym.name):
-            query = f"CREATE (n:OboSynonym {{name: '{synonym.name}'}})"
+        if not nju.node_exists("OboSynonym", "name", synonym.synonym_name):
+            query = f"CREATE (n:OboSynonym {{name: '{synonym.synonym_name}'}})"
             with nju.driver.session() as session:
                 session.run(query)
-        query = f"MATCH (o:OntologyTerm {{id: '{obt.id}'}}), (s:OboSynonym {{name: '{synonym.name}'}}) CREATE (o)-[:HAS_SYNONYM {{type: '{synonym.type}'}}]->(s)"
+        query = f"MATCH (o:OntologyTerm {{id: '{obt.id}'}}), (s:OboSynonym {{name: '{synonym.synonym_name}'}}) CREATE (o)-[:HAS_SYNONYM {{type: '{synonym.type}'}}]->(s)"
         with nju.driver.session() as session:
             session.run(query)
         # if the OboSynonym has pmids, process the pmids
@@ -161,4 +161,4 @@ def process_OntologyTerm_synonyms(obt):
             create_or_update_pubmed_article_node([pubmed_id])
             # create a relationship between the OboSynonym and PubMedArticle nodes in the database.
             # The relationship between the OboSynonym and PubMedArticle nodes is labeled as CITES
-            query = f"MATCH (s:OboSynonym {{name: '{synonym.name}'}}), (p:PubMedArticle {{pub_id: {pubmed_id}}}) CREATE (s)-[:CITES]->(p)"
+            query = f"MATCH (s:OboSynonym {{name: '{synonym.synonym_name}'}}), (p:PubMedArticle {{pub_id: {pubmed_id}}}) CREATE (s)-[:CITES]->(p)"
