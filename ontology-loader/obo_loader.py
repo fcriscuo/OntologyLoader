@@ -17,11 +17,11 @@ def create_or_update_OntologyTerm_node(obt: OboTerm):
     Create or update an OntologyTerm node in the database
     """
     if not ontology_term_exists(obt):
-        query = f"CREATE (n:OntologyTerm {{id: '{obt.id}', name: '{obt.term_name}', namespace: '{obt.namespace}', def: '{obt.def_}'}})"
+        query = f"CREATE (n:OntologyTerm {{id: '{obt.id}', name: '{obt.term_name}', namespace: '{obt.namespace}', def: '{obt.definition}'}})"
         with nju.driver.session() as session:
             session.run(query)
     else:
-        query = f"MATCH (n:OntologyTerm {{id: '{obt.id}'}}) SET n.name = '{obt.term_name}', n.namespace = '{obt.namespace}', n.def = '{obt.def_}'"
+        query = f"MATCH (n:OntologyTerm {{id: '{obt.id}'}}) SET n.name = '{obt.term_name}', n.namespace = '{obt.namespace}', n.def = '{obt.definition}'"
         with nju.driver.session() as session:
             session.run(query)
     # If the OntologyTerm has synonyms, create or update the OntologyTerm node with an Array of synonyms
