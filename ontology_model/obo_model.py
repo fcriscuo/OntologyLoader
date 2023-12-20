@@ -14,31 +14,30 @@ def get_ontology_name(id):
 def remove_special_characters(input_string):
     return input_string.translate({ord(c): None for c in '[]!,;'})
 
+def process_string(string):
+    string = re.sub(r'(\d+)' + "'", r'\1-prime', string)
+    string = string.replace("N'", "N-prime")
+    string = string.replace("'", "\\'")
+    return string
+
 class Xref:
-    def __init__(self, ontology, id,name):
-        self.ontology = ontology
+    def __init__(self ,id,name):
         self.term_id = id
         self.name = name
 
     def generate_xref_from_string(line: str):
+        parts = line.split(' ')
         if '"' in line:
-            match = re.match(r'(\w+): (\w+):(\S+) "(.*)"', line)
-            if match:
-             return Xref(match.group(2), match.group(3), match.group(4))
-        else:
-            match = re.match(r'(\w+): (\w+):(.*)', line)
-            if match:
-             return Xref(match.group(2), match.group(3), "")
-            else:
-                return Xref("", "", "")
+            return Xref(parts[1], process_string(parts[2].replace('"','')))
+        return Xref(parts[1], "")
 
 def __str__(self):
     return f"Ontology: {self.ontology}, ID: {self.term_id}, name: {self.name}"
 
 class OboSynonym:
     def __init__(self, input_string):
-        self.synonym_name = input_string.split('"')[1]
-        self.type = input_string.split(' ')[1]
+        self.synonym_name = process_string(input_string.split('"')[1])
+        self.type = process_string(input_string.split(' ')[1])
         self.pmids = [int(remove_special_characters(x[5:])) for x in input_string.split() if x.startswith('PMID:')]
 
 class OboRelationship:
@@ -59,7 +58,7 @@ class OboRelationship:
         else:
             id = parts[1]
             term_name = ' '.join(parts[2:]).replace('!', '').lstrip()
-
+        term_name = process_string(term_name)
         return OboRelationship(type, id, term_name, part_of)
 
 

@@ -22,13 +22,13 @@ def parse_obo_file(url: str) -> List[om.OboTerm]:
                 else:
                     term.ontology_name = ''
             elif line.startswith('name:'):
-                term.term_name = line[6:]
+                term.term_name = om.process_string(line[6:])
             elif line.startswith('namespace:'):
                 term.namespace = line[11:]
             elif line.startswith('comment:'):
                 term.comment = line[9:]
             elif line.startswith('def:'):
-                term.definition = line[5:].split('"')[1].replace("'", "\"")
+                term.definition = om.process_string(line[5:].split('"')[1])
                 if 'PMID:' in line:
                     term.pmids = extract_pmids(line[5:].split('"')[2].replace(']',''))
             elif line.startswith('synonym:'):

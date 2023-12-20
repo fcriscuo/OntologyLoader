@@ -115,7 +115,7 @@ def process_OntologyTerm_relationships(obt):
             create_or_update_OntologyTerm_node(obo_term)
         # create a relationship between the first OntologyTerm node and the second OntologyTerm node in the database.
         # use the OboRelationship's type property as the relationship label
-        query = f"MATCH (o1:OntologyTerm {{id: '{obt.id}'}}), (o2:OntologyTerm {{id: '{obo_term.id}'}}) CREATE (o1)-[:{relationship.type}]->(o2)"
+        query = f"MATCH (o1:OntologyTerm {{id: '{obt.id}'}}), (o2:OntologyTerm {{id: '{obo_term.id}'}}) MERGE(o1)-[:{relationship.type}]->(o2)"
         with nju.driver.session() as session:
             session.run(query)
 def process_OntologyTerm_xrefs(obt):
@@ -130,7 +130,7 @@ def process_OntologyTerm_xrefs(obt):
             create_or_update_OntologyTerm_node(obo_term)
         # create a relationship between the first OntologyTerm node and the second OntologyTerm node in the database.
         # The relationship between the OntologyTerm and OntologyTerm nodes is labeled as HAS_XREF
-        query = f"MATCH (o1:OntologyTerm {{id: '{obt.id}'}}), (o2:OntologyTerm {{id: '{obo_term.id}'}}) CREATE (o1)-[:HAS_XREF]->(o2)"
+        query = f"MATCH (o1:OntologyTerm {{id: '{obt.id}'}}), (o2:OntologyTerm {{id: '{obo_term.id}'}}) MERGE(o1)-[:HAS_XREF]->(o2)"
         with nju.driver.session() as session:
             session.run(query)
 
@@ -153,7 +153,7 @@ def process_OntologyTerm_synonyms(obt):
             query = f"CREATE (n:OboSynonym {{name: '{synonym.synonym_name}'}})"
             with nju.driver.session() as session:
                 session.run(query)
-        query = f"MATCH (o:OntologyTerm {{id: '{obt.id}'}}), (s:OboSynonym {{name: '{synonym.synonym_name}'}}) CREATE (o)-[:HAS_SYNONYM {{type: '{synonym.type}'}}]->(s)"
+        query = f"MATCH (o:OntologyTerm {{id: '{obt.id}'}}), (s:OboSynonym {{name: '{synonym.synonym_name}'}}) MERGE (o)-[:HAS_SYNONYM {{type: '{synonym.type}'}}]->(s)"
         with nju.driver.session() as session:
             session.run(query)
         # if the OboSynonym has pmids, process the pmids
@@ -161,4 +161,4 @@ def process_OntologyTerm_synonyms(obt):
             create_or_update_pubmed_article_node([pubmed_id])
             # create a relationship between the OboSynonym and PubMedArticle nodes in the database.
             # The relationship between the OboSynonym and PubMedArticle nodes is labeled as CITES
-            query = f"MATCH (s:OboSynonym {{name: '{synonym.synonym_name}'}}), (p:PubMedArticle {{pub_id: {pubmed_id}}}) CREATE (s)-[:CITES]->(p)"
+            query = f"MATCH (s:OboSynonym {{name: '{synonym.synonym_name}'}}), (p:PubMedArticle {{pub_id: {pubmed_id}}}) MERGE (s)-[:CITES]->(p)"
