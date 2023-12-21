@@ -18,6 +18,7 @@ def create_or_update_OntologyTerm_node(obt: OboTerm):
     """
     if not ontology_term_exists(obt):
         query = f"CREATE (n:OntologyTerm {{id: '{obt.id}', name: '{obt.term_name}', namespace: '{obt.namespace}', def: '{obt.definition}'}})"
+        print(query)
         with nju.driver.session() as session:
             session.run(query)
     else:

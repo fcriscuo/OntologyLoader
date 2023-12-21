@@ -1,5 +1,6 @@
 #Register an ontology's prefix and name
 #Exanple GO Gene Ontology
+import re
 registry = dict()
 registry['GO'] = 'Gene Ontology'
 registry['HP'] = 'Human Phenotype Ontology'
@@ -7,6 +8,8 @@ registry['Reactome'] = 'Reactome'
 registry['DOID'] = 'Disease Ontology'
 registry['MetaCyc'] = 'BioCyc'
 registry['MESH'] = 'Medical Subject Headings'
+registry['MSH'] = 'Medical Subject Headings'
+registry['UMLS'] = 'Unified Medical Language System'
 registry['NCIT'] = 'National Cancer Institute Thesaurus'
 registry['EC'] = 'IUBMB Enzyme Nomenclature'
 registry['CHEBI'] = 'Chemical Entities of Biological Interest'
@@ -28,6 +31,9 @@ registry["UM-BBD_pathwayID"] = 'Univ of Minn Biocatalysis Biodegradation DB'
 registry["RESID"] = 'RESID Database of Protein Modifications'
 registry["NIF_Subcellular"] = 'NIF Subcellular'
 registry["SABIO-RK"] = 'SABIO_RK'
+registry['SNOMEDCT_US'] = 'SNOMED Clinical Terms'
+registry['Fyler'] = 'Fyler'
+registry['MEDDRA'] = 'Medical Dictionary for Regulatory Activities'
 
 # define a function that accepts an ontology prefix and returns the ontology's name
 # if the prefix is not in the registry, return the prefix
@@ -36,7 +42,7 @@ def get_ontology_name(prefix):
         return registry[prefix]
     else:
         print(f"{prefix} is not in the registry")
-        return prefix.replace('-', '_')
+        return re.sub(r'[^A-Za-z0-9]', '_', prefix)
 
 # define a function that accepts an ontology prefix and name and adds it to the registry
 # if the prefix is not already in the registry

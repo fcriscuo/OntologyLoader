@@ -22,7 +22,7 @@ if __name__ == "__main__":
     """
     Load the Gene Ontology and the Human Phenotype Ontology
     """
-    load_ontology("http://purl.obolibrary.org/obo/go.obo")
-    print("Gene Ontology terms loaded")
-    load_ontology("http://purl.obolibrary.org/obo/hp.obo")
+    #load_ontology("http://purl.obolibrary.org/obo/go.obo")
+    #print("Gene Ontology terms loaded")
+    load_ontology("https://purl.obolibrary.org/obo/hp.obo")
     print("Human Phenotype Ontology terms loaded")

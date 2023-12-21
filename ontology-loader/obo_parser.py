@@ -46,10 +46,14 @@ def parse_obo_file(url: str) -> List[om.OboTerm]:
     return terms
 
 def extract_pmids(string):
-     return [int(item.strip()[5:]) for item in string.split(',') if item.strip().startswith('PMID:')]
+    try:
+        return [int(item.strip()[5:]) for item in string.split(',') if item.strip().startswith('PMID:')]
+    except ValueError:
+        print(f'ValueError: {string}')
+    return []
 
 if __name__ == "__main__":
-    url = "http://purl.obolibrary.org/obo/go.obo"
+    url = "https://purl.obolibrary.org/obo/hp.obo"
     terms = parse_obo_file(url)
     print(f"Ontology has {len(terms)} terms.")
     for i in range(1500,3000):
