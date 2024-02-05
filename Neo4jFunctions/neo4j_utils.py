@@ -42,7 +42,8 @@ def node_exists(label="PubMedArticle", id_prop="pub_id", id_value=0):
         # Return True if the result contains a record
         return result.single() is not None
 
-# Define a function that takes a node label, an identifier property, an identifier value, and a dictionary of new properties as arguments and updates the node in the database
+# Define a function that takes a node label, an identifier property, an identifier value,
+# and a dictionary of new properties as arguments and updates the node in the database
 def update_node(label, id_prop, id_value, properties):
     """
     Update the specified node with the specified properties
@@ -52,7 +53,10 @@ def update_node(label, id_prop, id_value, properties):
         return
     query = f"MATCH (n:{label} {{{id_prop}: {format_neo4j_property_value(id_value)}}}) SET "
     for key in properties:
-        query += f"n.{key} = '{properties[key]}', "
+        if properties[key].isnumeric() or properties[key].startswith('['):
+            query += f"n.{key} = {properties[key]}, "
+        else :
+             query += f"n.{key} = '{properties[key]}', "
     query = query[:-2]
     with driver.session() as session:
         session.run(query)

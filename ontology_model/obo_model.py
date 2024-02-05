@@ -10,7 +10,7 @@ def get_ontology_name(id):
         return ont_reg.get_ontology_name(prefix)
     return ''
 
-# define a funct that removes special characters from the end of a string
+# define a function that removes special characters from a string
 def remove_special_characters(input_string):
     return input_string.translate({ord(c): None for c in '[]!,;'})
 
@@ -18,6 +18,7 @@ def process_string(string):
     string = re.sub(r'(\d+)' + "'", r'\1-prime', string)
     string = string.replace("N'", "N-prime")
     string = string.replace("'", "\\'")
+    string = string.replace('"', '')
     return string
 
 class Xref:

@@ -15,5 +15,5 @@ def parse_obo(file_path):
 
 if __name__ == "__main__":
     # Replace with the path to your go.obo file
-    file_path = '/Users/fcriscuo/softwaredev/OntologyLoader/data/go.obo'
+    file_path = '/Volumes/SSD870/Ontologies/GeneOntology/go.obo'
     parse_obo(file_path)

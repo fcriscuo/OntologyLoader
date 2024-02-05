@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='ontology-loader',
+    name='ontology_loader',
     version='0.1',
     packages=find_packages(),
     description='Python functions to retrieve and load ontologies into Neo4j',

@@ -16,5 +16,5 @@ def parse_owl(file_path):
 
 if __name__ == "__main__":
     # Replace with the path to your go.owl file
-    file_path = './AIdev/knowledge_graph_demo/go.owl'
+    file_path = '/Volumes/SSD870/Ontologies/GeneOntology/go.owl'
     parse_owl(file_path)
