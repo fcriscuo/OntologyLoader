@@ -1,6 +1,7 @@
 from Neo4jFunctions import neo4j_utils as nju
 from ontology_model.obo_model import OboTerm
 
+
 # define a function that takes an OntologyTerm object and determines if a node labeled as OntologyTerm exists in the database based on the OntologyTerm's id property
 
 def ontology_term_exists(obt):
@@ -44,18 +45,19 @@ def create_or_update_OntologyTerm_node(obt: OboTerm):
         process_OntologyTerm_xrefs(obt)
     # Use the OntologyTerm's ontology_name property to add a label to the OntologyTerm node
     if obt.ontology_name:
-        query = f"MATCH (n:OntologyTerm {{id: '{obt.id}'}}) SET n:{obt.ontology_name.replace(' ','_')}"
+        query = f"MATCH (n:OntologyTerm {{id: '{obt.id}'}}) SET n:{obt.ontology_name.replace(' ', '_')}"
         with nju.driver.session() as session:
             session.run(query)
 
-
     # define a function that takes an PubMedArticle object and determines if a node labeled as PubMedArticle exists in the database based on the PubMedArticle's pub_id property
 
-def pubmed_article_node_exists(pub_id:int):
+
+def pubmed_article_node_exists(pub_id: int):
     """
     Return True if a node labeled as PubMedArticle exists in the database based on the PubMedArticle's pub_id property
     """
     return nju.node_exists("PubMedArticle", "pub_id", str(pub_id))
+
 
 # define a function that processes a List of integers as PubMedArticle pub_ids, if a PubMedArticle node does not exist in the database for the pub_id, it creates a PubMedArticle node in the database
 # set the new PubMedArticle node's needs_properties property to True and tne needs_references property to True.
@@ -72,15 +74,15 @@ def create_or_update_pubmed_article_node(pubmed_ids):
             query = (f"CREATE (n:PubMedArticle:`biolink:Publication`:`biolink:Article' {{pub_id: {str(pubmed_id)}, "
                      f"needs_properties: TRUE, needs_references: TRUE}})")
         else:
-            query = (f"MATCH (n:PubMedArticle) WHERE n.pub_id = {str(pubmed_id)} SET n:`biolink:Publication`:`biolink:Article'")
+            query = (
+                f"MATCH (n:PubMedArticle) WHERE n.pub_id = {str(pubmed_id)} SET n:`biolink:Publication`:`biolink:Article'")
         with nju.driver.session() as session:
-                session.run(query)
-
+            session.run(query)
 
 
 # define a function that takes an OntologyTerm object and a PubMedArticle object as arguments and creates a relationship between the OntologyTerm and PubMedArticle nodes in the database
 
-def create_OntologyTerm_pubmed_article_relationship(obt, pub_id:int):
+def create_OntologyTerm_pubmed_article_relationship(obt, pub_id: int):
     """
     Create a relationship between the OntologyTerm and PubMedArticle nodes in the database
     """
@@ -88,13 +90,15 @@ def create_OntologyTerm_pubmed_article_relationship(obt, pub_id:int):
     with nju.driver.session() as session:
         session.run(query)
 
-def create_OntologyClass_pubmed_article_relationship(obt, pub_id:int):
+
+def create_OntologyClass_pubmed_article_relationship(obt, pub_id: int):
     """
     Create a relationship between the OntologyClass and PubMedArticle nodes in the database
     """
     query = f"MATCH (o:OntologyClass {{id: '{obt.id}'}}), (p:PubMedArticle {{pub_id: {str(pub_id)}}}) CREATE (o)-[:CITES]->(p)"
     with nju.driver.session() as session:
         session.run(query)
+
 
 # define a function that takes an OntologyTerm object and processes its List of  pmids
 # for each pubmed_id in the List of pmids, create a PubMedArticle node in the database if it does not exist
@@ -108,25 +112,31 @@ def process_OntologyTerm_pmids(obt):
         create_or_update_pubmed_article_node([pubmed_id])
         create_OntologyTerm_pubmed_article_relationship(obt, pubmed_id)
 
+
 def process_OntologyClass_pmids(obt):
     for pubmed_id in obt.pmids:
         if not pubmed_article_node_exists(pubmed_id):
             query = (f"CREATE (n:PubMedArticle:`biolink:Article`:`biolink:Entity`:`biolink:InformationContentEntity`:"
-                     f"`biolink:NamedThing`:`biolink:Publication`:`biolink:JournalArticle` {{ PMID: {str(pubmed_id)}, "
+                     f"`biolink:NamedThing`:`biolink:Publication`:`biolink:JournalArticle` {{ pub_id: {str(pubmed_id)}, "
                      f" category:['biolink:Article','biolink:Entity','biolink:InformationContentEntity','biolink:NamedThing','biolink:Publication',"
                      f" 'biolink:JournalArticle'],iri:'https://pubmed.ncbi.nlm.nih.gov/{str(pubmed_id)}/',"
                      f" needs_properties: TRUE, needs_references: TRUE}})")
         else:
-            query = (f"MATCH (n:PubMedArticle) WHERE n.PMID = {str(pubmed_id)} "
-                     f" SET n:`biolink:Publication`:'`biolink:Article`:`biolink:Entity`:`biolink:InformationContentEntity`:"
+            query = (f"MATCH (n:PubMedArticle) WHERE n.pub_id = {str(pubmed_id)}  AND n.iri is NULL "
+                     f" SET n:`biolink:Publication`:`biolink:Article`:`biolink:Entity`:`biolink:InformationContentEntity`:"
                      f"`biolink:NamedThing`:`biolink:Publication`:`biolink:JournalArticle`,"
-                     f" iri:'https://pubmed.ncbi.nlm.nih.gov/{str(pubmed_id)}/'")
+                     f" n.iri='https://pubmed.ncbi.nlm.nih.gov/{str(pubmed_id)}/'")
         with nju.driver.session() as session:
+            try:
                 session.run(query)
+            except Exception as e:
+                print(f"Error creating/updating node for {pubmed_id}")
+                print(query)
 
-        query = f"MATCH (o:`biolink:OntologyClass` {{id: '{obt.id}'}}), (p:PubMedArticle {{PMID: {str(pubmed_id)}}}) CREATE (o)-[:CITES]->(p)"
+        query = f"MATCH (o:`biolink:OntologyClass` {{id: '{obt.id}'}}), (p:PubMedArticle {{pub_id: {str(pubmed_id)}}}) CREATE (o)-[:CITES]->(p)"
         with nju.driver.session() as session:
             session.run(query)
+            print(f"Created relationship between OntologyClass {obt.id} and PubMedArticle {pubmed_id}")
 
 
 # Process intra-ontology relationships
@@ -154,28 +164,25 @@ def process_OntologyTerm_relationships(obt):
             session.run(query)
 
 
-
 """
 define a function that processes the List of OboXref objects in a supplied OboTerm object
  For each OboXref, append the term_id property to a comma-delimited String, each item in the String
  should be enclosed within single quotes. The first character in the string should be an open bracket,
  and the last character should be a closing bracket.
 """
-def format_OntologyClass_xrefs(obt:OboTerm):
+
+
+def format_OntologyClass_xrefs(obt: OboTerm):
     formatted_xrefs = ",".join([f"'{xref.term_id}'" for xref in obt.xrefs])
     return f"[{formatted_xrefs}]"
 
 
-
-
-
-#Process OboTerm xrefs
+# Process OboTerm xrefs
 # define a function that takes a List of OboXref objects and for each OboXref object,
 # maps that OboXref object to an OboTerm object. If the new OboTerm object does not exist in the database as an OntologyTerm node,
 # create an OntologyTerm node in the database using the new OboTerm object
 # Create a relationship between the first OntologyTerm node and the second OntologyTerm node in the database.
 # The relationship between the OntologyTerm and OntologyTerm nodes is labeled as HAS_XREF
-
 
 
 def process_OntologyTerm_xrefs(obt):
@@ -195,8 +202,7 @@ def process_OntologyTerm_xrefs(obt):
             session.run(query)
 
 
-
-#Process Synonyms
+# Process Synonyms
 # define a function that takes a List of OboSynonym objects and for each OboSynonym object,
 # creates a node in the database if it does not exist and creates a relationship
 # between the OntologyTerm and OboSynonym nodes in the database.

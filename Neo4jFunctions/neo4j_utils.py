@@ -1,5 +1,7 @@
 from neo4j import GraphDatabase
 import os
+import ast
+import json
 
 # Define the database URI, user, and password
 # User and password are set as environment variables with standard Neo4j defaults
@@ -10,6 +12,19 @@ password = os.environ.get('NEO4J_PASSWORD', "neo4j")
 
 # Create a driver object to connect to the database
 driver = GraphDatabase.driver(uri, auth=(user, password))
+
+
+#Define a function that will create a vector index for the PubMedArticle label and the embeddings property
+def create_abstract_vector_index(driver) -> None:
+    if index_exists("abstract-embeddings"):
+        print("Vector index already exists for biolink:JournalArticle abstract embeddings")
+        return
+    index_query = "CALL db.index.vector.createNodeIndex('abstract-embeddings', '`biolink:JournalArticle`', 'embedding', $dimension, 'cosine')"
+
+    driver.query(index_query, {"dimension": dimension})
+    print("Created vector index for biolink:JournalArticle abstract embeddings")
+
+
 
 # Define a function that takes a query as an argument and returns a list of nodes
 def get_nodes(query):
@@ -31,6 +46,15 @@ def get_node_property(label, id_prop, id_value, prop):
         result = session.run(query)
         value = result.single()[0]
         return value
+# Delete a specified property from all nodes with a specified label
+def delete_property_from_nodes(label, prop):
+    """
+    Delete the specified property from all nodes with the specified label
+    """
+    query = f"MATCH (n:{label}) REMOVE n.{prop}"
+    with driver.session() as session:
+        session.run(query)
+    print(f"Deleted property {prop} from all nodes with label {label}")
 
 def node_exists(label="PubMedArticle", id_prop="pub_id", id_value=0):
     # Use a context manager to create a session with the driver
@@ -41,6 +65,13 @@ def node_exists(label="PubMedArticle", id_prop="pub_id", id_value=0):
         result = session.run(query, id_value=id_value)
         # Return True if the result contains a record
         return result.single() is not None
+
+def is_numeric(value):
+  """Checks if a value is numeric (int or float)."""
+  return isinstance(value, (int, float))
+
+def is_list_value(data, key):
+  return isinstance(data.get(key), list)
 
 # Define a function that takes a node label, an identifier property, an identifier value,
 # and a dictionary of new properties as arguments and updates the node in the database
@@ -53,7 +84,7 @@ def update_node(label, id_prop, id_value, properties):
         return
     query = f"MATCH (n:{label} {{{id_prop}: {format_neo4j_property_value(id_value)}}}) SET "
     for key in properties:
-        if properties[key].isnumeric() or properties[key].startswith('['):
+        if is_numeric(properties[key]) or is_list_value(properties, key):
             query += f"n.{key} = {properties[key]}, "
         else :
              query += f"n.{key} = '{properties[key]}', "
@@ -78,6 +109,25 @@ def format_neo4j_property_value(value):
             return value
     else:
         return f'"{value}"'
+def convert_selected_properties_to_neo4j_list(data, keys):
+    """
+    Processes a dictionary by applying a function to specific keys and values.
+    Primary intent is to convert a list of strings to a list of quoted strings for use in a Cypher query.
+
+    Args:
+        data: The original dictionary.
+        keys: A list of keys to process.
+
+    Returns:
+        A new dictionary with the processed values.
+    """
+    new_data = {}
+    for key, value in data.items():
+        if key in keys:
+            new_data[key] = parse_to_quoted_neo4j_string_list(value)
+        else:
+            new_data[key] = value
+    return new_data
 
 
 # define a function that accepts a double-quoted and if numeric returns it as an integer
@@ -106,3 +156,31 @@ def parse_to_quoted_neo4j_string_list(string, sep='|'):
         return f"[{', '.join(list_)}]"
     else:
         return "[]"
+
+# define a function that accepts a string representing a Neo4j array and returns a list of strings
+def neo4j_array_to_list(neo4j_array:str):
+    data = json.loads(neo4j_array)
+    return data
+
+# define a function that accepts a string as an neo4j index name
+# and returns true if that index exists
+def index_exists(index_name):
+    with driver.session() as session:
+        query = f"show indexes YIELD name WHERE name = '{index_name}' RETURN name"
+        result = session.run(query)
+        return result.single() is not None
+# Function to remove single quotes from a string
+# prevents parsing errors in Cypher queries
+def remove_single_quotes(input_string):
+  """Removes single quotes from a string.
+
+  Args:
+      input_string: The string to modify.
+
+  Returns:
+      The modified string with single quotes removed.
+  """
+  if "'" in input_string:
+    return input_string.replace("'", "")
+  else:
+    return input_string
