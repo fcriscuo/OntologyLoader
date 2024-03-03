@@ -21,10 +21,6 @@ def generate_embedding(title, abstract):
                                 content=abstract,
                                 task_type="retrieval_document",
                                 title=title)
-
-    # print the embedding
-    print (f"embedding is {embedding['embedding']}")
-    print(f"embedding size is {len(embedding['embedding'])}")
     # Return the embedding
     return embedding['embedding']
 

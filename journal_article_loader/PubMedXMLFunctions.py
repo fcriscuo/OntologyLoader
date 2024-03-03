@@ -75,12 +75,15 @@ def extract_pubmed_data(pubmed_article):
     url = f"https://www.ncbi.nlm.nih.gov/pubmed/{pmid}"
     # extract the title from each article
     title = pubmed_article.find("MedlineCitation/Article/ArticleTitle").text
+    title = pmf.edit_biological_string(title)
     # extract the abstract from each article
     abstract = pubmed_article.find("MedlineCitation/Article/Abstract/AbstractText").text if pubmed_article.find(
         "MedlineCitation/Article/Abstract/AbstractText") is not None else ""
+    abstract = pmf.edit_biological_string(abstract)
     # extract the journal title from each article
     journal = pubmed_article.find("MedlineCitation/Article/Journal/Title").text if pubmed_article.find(
         "MedlineCitation/Article/Journal/Title") is not None else ""
+    journal = pmf.edit_biological_string(journal)
     # extract the volume from each article
     volume = pubmed_article.find("MedlineCitation/Article/Journal/JournalIssue/Volume").text if pubmed_article.find(
         "MedlineCitation/Article/Journal/JournalIssue/Volume") is not None else ""

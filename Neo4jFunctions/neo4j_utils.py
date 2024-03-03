@@ -24,6 +24,14 @@ def create_abstract_vector_index(driver) -> None:
     driver.query(index_query, {"dimension": dimension})
     print("Created vector index for biolink:JournalArticle abstract embeddings")
 
+def query_node_property_values(query, property_name):
+    """
+    Return the value of the specified property from the nodes returned by the query
+    """
+    with driver.session() as session:
+        result = session.run(query)
+        values= [record[property_name] for record in result]
+        return values
 
 
 # Define a function that takes a query as an argument and returns a list of nodes
@@ -70,6 +78,16 @@ def is_numeric(value):
   """Checks if a value is numeric (int or float)."""
   return isinstance(value, (int, float))
 
+def needs_properties_nodes_exist():
+    # Use a context manager to create a session with the driver
+    with driver.session() as session:
+        # Constrct a Neo4j query that detemines if there are any PubMedArticle nodes that have the needs_properties property set to TRUE
+        query = "MATCH (n:`biolink:JournalArticle`) WHERE n.needs_properties = TRUE RETURN COUNT(n) > 0 AS result"
+        # Run the query with the parameters
+        result = session.run(query)
+        # Return True if the result contains a record
+        return result.single() is not None
+
 def is_list_value(data, key):
   return isinstance(data.get(key), list)
 
@@ -90,8 +108,11 @@ def update_node(label, id_prop, id_value, properties):
              query += f"n.{key} = '{properties[key]}', "
     query = query[:-2]
     with driver.session() as session:
-        session.run(query)
-
+        try:
+            session.run(query)
+            print(f"Updated node {label} {id_prop} {id_value}")
+        except Exception as e:
+            print(f"Error updating node {label} {id_prop} {id_value}: {e}")
 
 # Define a function entitled format_neo4j_property_value, that takes a string.
 # If the string is enclosed in double quotes and its value is a number, remove the double quotes,
@@ -184,3 +205,22 @@ def remove_single_quotes(input_string):
     return input_string.replace("'", "")
   else:
     return input_string
+
+def edit_biological_string(input_string):
+  """Edits a string for biological notations.
+
+  Args:
+      input_string: The input string.
+
+  Returns:
+      The edited string.
+  """
+  # Specific replacements for greater efficiency
+  edited_string = input_string.replace("3'", "3-prime").replace("5'", "5-prime")
+
+  # Replace other single quotes with blanks
+  for char in edited_string:
+    if char == "'":
+        edited_string = edited_string.replace(char, "")
+
+  return edited_string
