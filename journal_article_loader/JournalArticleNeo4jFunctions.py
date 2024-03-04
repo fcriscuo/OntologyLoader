@@ -83,7 +83,7 @@ def update_node(label, id_prop, id_value, props):
         # print(f"procsessing references {references}")
         if references is not None:
             create_reference_nodes(id_value, references)
-            # print(f"processing references for {id_value} {references}")
+            print(f"processing references for {id_value} {references}")
             pri.persist_reference_data(id_value, references)
 
 

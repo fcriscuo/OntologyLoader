@@ -193,34 +193,20 @@ def index_exists(index_name):
 # Function to remove single quotes from a string
 # prevents parsing errors in Cypher queries
 def remove_single_quotes(input_string):
-  """Removes single quotes from a string.
 
-  Args:
-      input_string: The string to modify.
-
-  Returns:
-      The modified string with single quotes removed.
-  """
   if "'" in input_string:
     return input_string.replace("'", "")
   else:
     return input_string
 
 def edit_biological_string(input_string):
-  """Edits a string for biological notations.
-
-  Args:
-      input_string: The input string.
-
-  Returns:
-      The edited string.
-  """
+  if (input_string is None) or (input_string == ""):
+    return input_string
   # Specific replacements for greater efficiency
   edited_string = input_string.replace("3'", "3-prime").replace("5'", "5-prime")
+  return remove_single_quotes(edited_string)
 
-  # Replace other single quotes with blanks
-  for char in edited_string:
-    if char == "'":
-        edited_string = edited_string.replace(char, "")
-
-  return edited_string
+if __name__ == "__main__":
+    title = "Friend or foe-Post-translational 3' modification's as regulator's of phase separation and RNP granule dynamics."
+    x = None
+    print(f"title: {edit_biological_string(title)}")
